@@ -40,7 +40,7 @@ const envelope = (overrides: Partial<FireEnvelope>): FireEnvelope => ({
   ],
   assumptions: {
     annual_expenses: 40,
-    withdrawal_input: { kind: "rate", value: 0.04 },
+    withdrawal_rate: 0.04,
     inflation_rate: 0,
     barista_combined_income: 0,
     projection_end_age: 47,
@@ -49,42 +49,20 @@ const envelope = (overrides: Partial<FireEnvelope>): FireEnvelope => ({
 });
 
 describe("FIRE target", () => {
-  it("uses annual expenses divided by withdrawal rate in rate mode", () => {
+  it("uses annual expenses divided by withdrawal rate", () => {
     expect(calculateFireTarget(envelope({}))).toEqual({
       fire_target: 1_000,
       effective_withdrawal_rate: 0.04,
     });
   });
 
-  it("uses fixed annual withdrawal divided by 4 percent in fixed mode", () => {
-    expect(
-      calculateFireTarget(
-        envelope({
-          assumptions: {
-            annual_expenses: 40,
-            withdrawal_input: {
-              kind: "fixed_annual_withdrawal",
-              value: 100_000,
-            },
-            inflation_rate: 0,
-            barista_combined_income: 0,
-            projection_end_age: 47,
-          },
-        }),
-      ),
-    ).toEqual({
-      fire_target: 2_500_000,
-      effective_withdrawal_rate: 0.04,
-    });
-  });
-
-  it("clamps non-finite rate-mode targets from tiny withdrawal rates", () => {
+  it("clamps non-finite targets from tiny withdrawal rates", () => {
     expect(
       calculateFireTarget(
         envelope({
           assumptions: {
             annual_expenses: 1,
-            withdrawal_input: { kind: "rate", value: Number.MIN_VALUE },
+            withdrawal_rate: Number.MIN_VALUE,
             inflation_rate: 0,
             barista_combined_income: 0,
             projection_end_age: 47,
@@ -94,34 +72,6 @@ describe("FIRE target", () => {
     ).toEqual({
       fire_target: Number.MAX_SAFE_INTEGER,
       effective_withdrawal_rate: Number.MIN_VALUE,
-      warnings: [
-        {
-          code: "fire_target_overflow",
-          message: "FIRE target exceeded finite engine range and was clamped.",
-        },
-      ],
-    });
-  });
-
-  it("clamps non-finite fixed annual withdrawal targets from huge inputs", () => {
-    expect(
-      calculateFireTarget(
-        envelope({
-          assumptions: {
-            annual_expenses: 40,
-            withdrawal_input: {
-              kind: "fixed_annual_withdrawal",
-              value: Number.MAX_VALUE,
-            },
-            inflation_rate: 0,
-            barista_combined_income: 0,
-            projection_end_age: 47,
-          },
-        }),
-      ),
-    ).toEqual({
-      fire_target: Number.MAX_SAFE_INTEGER,
-      effective_withdrawal_rate: 0.04,
       warnings: [
         {
           code: "fire_target_overflow",
@@ -141,7 +91,7 @@ describe("FIRE target", () => {
       envelope({
         assumptions: {
           annual_expenses: 0,
-          withdrawal_input: { kind: "rate", value: 0.04 },
+          withdrawal_rate: 0.04,
           inflation_rate: 0,
           barista_combined_income: 0,
           projection_end_age: 47,
@@ -160,7 +110,7 @@ describe("FIRE target", () => {
       envelope({
         assumptions: {
           annual_expenses: 0,
-          withdrawal_input: { kind: "rate", value: 0.04 },
+          withdrawal_rate: 0.04,
           inflation_rate: 0,
           barista_combined_income: 0,
           projection_end_age: 47,
@@ -284,7 +234,7 @@ describe("Coast FIRE", () => {
       ],
       assumptions: {
         annual_expenses: 40,
-        withdrawal_input: { kind: "rate", value: 0.04 },
+        withdrawal_rate: 0.04,
         inflation_rate: 0,
         barista_combined_income: 0,
         projection_end_age: 57,
@@ -340,7 +290,7 @@ describe("Barista FIRE", () => {
         accounts: [account({ id: "tfsa", annual_contribution: 250 })],
         assumptions: {
           annual_expenses: 50,
-          withdrawal_input: { kind: "rate", value: 0.04 },
+          withdrawal_rate: 0.04,
           inflation_rate: 0,
           barista_combined_income: 20,
           projection_end_age: 47,
@@ -394,7 +344,7 @@ describe("Barista FIRE", () => {
         accounts: [account({ id: "tfsa", annual_contribution: 250 })],
         assumptions: {
           annual_expenses: 50,
-          withdrawal_input: { kind: "rate", value: 0.04 },
+          withdrawal_rate: 0.04,
           inflation_rate: 0,
           barista_combined_income: 20,
           projection_end_age: 65,

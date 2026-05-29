@@ -19,7 +19,7 @@ const importedEnvelope = (): FireEnvelope => ({
   snapshots: [],
   assumptions: {
     annual_expenses: 72000,
-    withdrawal_input: { kind: "fixed_annual_withdrawal", value: 100000 },
+    withdrawal_rate: 0.04,
     inflation_rate: 0.025,
     barista_combined_income: 0,
     projection_end_age: 90,

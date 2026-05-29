@@ -9,7 +9,6 @@ export type {
   HouseholdProfile,
   Owner,
   Snapshot,
-  WithdrawalInput,
 } from "./types";
 
 const isoDateTimeSchema = z.iso.datetime({ offset: true });
@@ -22,21 +21,6 @@ const nonBlankStringSchema = z
     message: "Required string cannot be blank",
   });
 const optionalNonBlankStringSchema = nonBlankStringSchema.optional();
-
-export const withdrawalInputSchema = z.discriminatedUnion("kind", [
-  z
-    .object({
-      kind: z.literal("rate"),
-      value: finiteNumberSchema.gt(0).max(1),
-    })
-    .strict(),
-  z
-    .object({
-      kind: z.literal("fixed_annual_withdrawal"),
-      value: finiteNumberSchema.gt(0),
-    })
-    .strict(),
-]);
 
 export const profileSchema = z
   .object({
@@ -89,7 +73,7 @@ export const snapshotSchema = z
 export const assumptionsSchema = z
   .object({
     annual_expenses: nonNegativeFiniteNumberSchema,
-    withdrawal_input: withdrawalInputSchema,
+    withdrawal_rate: finiteNumberSchema.gt(0).max(1),
     inflation_rate: finiteNumberSchema.min(-0.99).max(1),
     barista_combined_income: nonNegativeFiniteNumberSchema,
     projection_end_age: z.number().int().min(1).max(120),

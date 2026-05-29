@@ -39,7 +39,7 @@ const validEnvelope = (): FireEnvelope => ({
   ],
   assumptions: {
     annual_expenses: 72000,
-    withdrawal_input: { kind: "rate", value: 0.04 },
+    withdrawal_rate: 0.04,
     inflation_rate: 0.025,
     barista_combined_income: 25000,
     projection_end_age: 90,
@@ -168,17 +168,14 @@ describe("FIRE envelope schema", () => {
 
   it("rejects invalid withdrawal inputs", () => {
     const envelope = validEnvelope();
-    envelope.assumptions.withdrawal_input = {
-      kind: "rate",
-      value: 0,
-    };
+    envelope.assumptions.withdrawal_rate = 0;
 
     const result = validateFireEnvelope(envelope);
 
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(formatValidationErrors(result.error)).toContainEqual(
-        expect.objectContaining({ path: "assumptions.withdrawal_input.value" }),
+        expect.objectContaining({ path: "assumptions.withdrawal_rate" }),
       );
     }
   });

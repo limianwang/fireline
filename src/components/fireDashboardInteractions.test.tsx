@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe("FIRE dashboard interactions", () => {
-  it("renders withdrawal assumptions as a compact readable control", () => {
+  it("renders withdrawal as one editable rate tied to annual expenses", () => {
     render(
       <HouseholdProvider initialEnvelope={envelope()}>
         <App />
@@ -35,11 +35,10 @@ describe("FIRE dashboard interactions", () => {
 
     const withdrawalField = elementWithText("Withdrawal")?.closest(".assumption-field");
 
-    expect(withdrawalField?.textContent).toContain("Rate");
-    expect(withdrawalField?.textContent).toContain("Fixed");
+    expect(withdrawalField?.textContent).not.toContain("Rate");
+    expect(withdrawalField?.textContent).not.toContain("Fixed");
     expect(withdrawalField?.textContent).toContain("4%");
     expect(withdrawalField?.textContent).toContain("of annual expenses");
-    expect(withdrawalField?.textContent).not.toContain("fixed annual withdrawal");
   });
 
   it("changes projection display mode without mutating stored contributions", async () => {
@@ -142,7 +141,7 @@ const envelope = (): FireEnvelope => ({
   ],
   assumptions: {
     annual_expenses: 40,
-    withdrawal_input: { kind: "rate", value: 0.04 },
+    withdrawal_rate: 0.04,
     inflation_rate: 0.1,
     barista_combined_income: 0,
     projection_end_age: 43,

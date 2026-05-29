@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 
-import type { Owner, WithdrawalInput } from "../domain";
+import type { Owner } from "../domain";
 import { useHouseholdStore } from "../state";
 import { InlineEditable } from "./InlineEditable";
 import {
@@ -30,37 +30,10 @@ export function AssumptionsSection({
   const { assumptions } = state.current;
   const owners = state.current.owners ?? [];
 
-  const updateWithdrawalMode = (kind: WithdrawalInput["kind"]) => {
-    if (assumptions.withdrawal_input.kind === kind) {
-      return;
-    }
-
+  const updateWithdrawalRate = (value: number) => {
     dispatch({
       type: "assumptions_updated",
-      patch: {
-        withdrawal_input:
-          kind === "rate"
-            ? { kind, value: 0.04 }
-            : {
-                kind,
-                value:
-                  assumptions.annual_expenses > 0
-                    ? assumptions.annual_expenses
-                    : 100000,
-              },
-      },
-    });
-  };
-
-  const updateWithdrawalValue = (value: number) => {
-    dispatch({
-      type: "assumptions_updated",
-      patch: {
-        withdrawal_input: {
-          ...assumptions.withdrawal_input,
-          value,
-        },
-      },
+      patch: { withdrawal_rate: value },
     });
   };
 
@@ -131,42 +104,16 @@ export function AssumptionsSection({
 
         <InlineField label="Withdrawal">
           <div className="withdrawal-editor">
-            <div className="withdrawal-mode-control" aria-label="Withdrawal mode">
-              <button
-                type="button"
-                aria-pressed={assumptions.withdrawal_input.kind === "rate"}
-                onClick={() => updateWithdrawalMode("rate")}
-              >
-                Rate
-              </button>
-              <button
-                type="button"
-                aria-pressed={
-                  assumptions.withdrawal_input.kind === "fixed_annual_withdrawal"
-                }
-                onClick={() => updateWithdrawalMode("fixed_annual_withdrawal")}
-              >
-                Fixed
-              </button>
-            </div>
             <div className="withdrawal-value-row">
               <InlineEditable
-                label="withdrawal value"
-                value={withdrawalInputValue(assumptions.withdrawal_input)}
-                displayValue={formatWithdrawalInput(assumptions.withdrawal_input)}
+                label="withdrawal rate"
+                value={formatPercent(assumptions.withdrawal_rate)}
+                displayValue={formatPercent(assumptions.withdrawal_rate)}
                 inputMode="decimal"
-                parse={(value) =>
-                  assumptions.withdrawal_input.kind === "rate"
-                    ? parsePositivePercent(value)
-                    : parsePositiveMoney(value)
-                }
-                onCommit={updateWithdrawalValue}
+                parse={parsePositivePercent}
+                onCommit={updateWithdrawalRate}
               />
-              <span className="withdrawal-unit">
-                {assumptions.withdrawal_input.kind === "rate"
-                  ? "of annual expenses"
-                  : "per year"}
-              </span>
+              <span className="withdrawal-unit">of annual expenses</span>
             </div>
           </div>
         </InlineField>
@@ -454,29 +401,3 @@ const parseInflationRate = (value: string): FieldParseResult => {
 
   return result;
 };
-
-const parsePositiveMoney = (value: string): FieldParseResult => {
-  const result = parseMoneyInput(value);
-  if (!result.success) {
-    return result;
-  }
-
-  if (result.value <= 0) {
-    return {
-      success: false,
-      message: "Enter a dollar amount greater than 0.",
-    };
-  }
-
-  return result;
-};
-
-const withdrawalInputValue = (withdrawalInput: WithdrawalInput): string =>
-  withdrawalInput.kind === "rate"
-    ? formatPercent(withdrawalInput.value)
-    : String(withdrawalInput.value);
-
-const formatWithdrawalInput = (withdrawalInput: WithdrawalInput): string =>
-  withdrawalInput.kind === "rate"
-    ? formatPercent(withdrawalInput.value)
-    : formatMoney(withdrawalInput.value);

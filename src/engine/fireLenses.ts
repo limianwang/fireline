@@ -20,17 +20,10 @@ export type FireDate = {
 export const calculateFireTarget = (
   envelope: FireEnvelope,
 ): FireTargetResult => {
-  const withdrawalInput = envelope.assumptions.withdrawal_input;
-  if (withdrawalInput.kind === "fixed_annual_withdrawal") {
-    return toFireTargetResult({
-      rawTarget: withdrawalInput.value / 0.04,
-      effective_withdrawal_rate: 0.04,
-    });
-  }
-
   return toFireTargetResult({
-    rawTarget: envelope.assumptions.annual_expenses / withdrawalInput.value,
-    effective_withdrawal_rate: withdrawalInput.value,
+    rawTarget:
+      envelope.assumptions.annual_expenses / envelope.assumptions.withdrawal_rate,
+    effective_withdrawal_rate: envelope.assumptions.withdrawal_rate,
   });
 };
 

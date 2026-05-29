@@ -5,16 +5,6 @@ export type AccountType =
   | "cash"
   | "other_asset";
 
-export type WithdrawalInput =
-  | {
-      kind: "rate";
-      value: number;
-    }
-  | {
-      kind: "fixed_annual_withdrawal";
-      value: number;
-    };
-
 export type HouseholdProfile = {
   birth_year: number;
   retirement_age: number;
@@ -55,7 +45,7 @@ export type Snapshot = {
 
 export type HouseholdAssumptions = {
   annual_expenses: number;
-  withdrawal_input: WithdrawalInput;
+  withdrawal_rate: number;
   inflation_rate: number;
   barista_combined_income: number;
   projection_end_age: number;

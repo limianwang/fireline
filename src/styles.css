@@ -445,43 +445,6 @@ h2 {
   gap: 6px;
 }
 
-.withdrawal-mode-control {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  overflow: hidden;
-  width: 100%;
-  max-width: 168px;
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  background: var(--surface-2);
-  padding: 2px;
-  gap: 1px;
-}
-
-.withdrawal-mode-control button {
-  min-height: 24px;
-  border: 0;
-  border-radius: 2px;
-  background: transparent;
-  color: var(--text-3);
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.1;
-  padding: 0 8px;
-  transition: background 0.12s, color 0.12s;
-}
-
-.withdrawal-mode-control button:last-child {
-  border-right: 0;
-}
-
-.withdrawal-mode-control button[aria-pressed="true"] {
-  background: var(--surface);
-  color: var(--accent);
-  font-weight: 700;
-  box-shadow: 0 1px 3px rgba(26, 23, 20, 0.10), 0 0 0 0.5px var(--border-strong);
-}
-
 .withdrawal-value-row {
   display: flex;
   align-items: baseline;
