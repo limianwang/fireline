@@ -19,6 +19,14 @@ type SnapshotDraft = {
   date: string;
   label: string;
   notes: string;
+  accountBalances: SnapshotBalanceDraft[];
+};
+
+type SnapshotBalanceDraft = AccountBalance & {
+  balanceInput: string;
+};
+
+type PersistedSnapshotDraft = Omit<SnapshotDraft, "accountBalances"> & {
   accountBalances: AccountBalance[];
 };
 
@@ -282,7 +290,7 @@ function SnapshotEditor({
   draft: SnapshotDraft;
   onCancel: () => void;
   onSave: (
-    draft: SnapshotDraft,
+    draft: PersistedSnapshotDraft,
     setError: (message: string | null) => void,
   ) => void;
 }) {
@@ -302,7 +310,13 @@ function SnapshotEditor({
       return;
     }
 
-    onSave(draft, setError);
+    const parsedDraft = parseSnapshotDraft(draft);
+    if (!parsedDraft) {
+      setError("Enter a valid dollar amount for each balance.");
+      return;
+    }
+
+    onSave(parsedDraft, setError);
   };
 
   return (
@@ -374,17 +388,19 @@ function SnapshotEditor({
                 <input
                   aria-label={`${account?.name ?? balance.account_id} snapshot balance`}
                   className="table-input numeric-input"
-                  value={String(balance.balance)}
+                  value={balance.balanceInput}
                   onChange={(event) => {
-                    const result = parseMoneyInput(event.target.value);
-                    if (!result.success) {
-                      return;
-                    }
+                    const nextInput = event.target.value;
+                    const result = parseMoneyInput(nextInput);
                     setDraft((current) => ({
                       ...current,
                       accountBalances: current.accountBalances.map((item) =>
                         item.account_id === balance.account_id
-                          ? { ...item, balance: result.value }
+                          ? {
+                              ...item,
+                              balanceInput: nextInput,
+                              balance: result.success ? result.value : item.balance,
+                            }
                           : item,
                       ),
                     }));
@@ -411,15 +427,43 @@ const createNewSnapshotDraft = (envelope: FireEnvelope): SnapshotDraft => ({
   date: todayLocalDate(),
   label: "",
   notes: "",
-  accountBalances: selectSnapshotBalancePrefill(envelope),
+  accountBalances: selectSnapshotBalancePrefill(envelope).map(toBalanceDraft),
 });
 
 const createEditSnapshotDraft = (snapshot: Snapshot): SnapshotDraft => ({
   date: snapshot.date,
   label: snapshot.label ?? "",
   notes: snapshot.notes ?? "",
-  accountBalances: snapshot.account_balances.map((balance) => ({ ...balance })),
+  accountBalances: snapshot.account_balances.map(toBalanceDraft),
 });
+
+const toBalanceDraft = (balance: AccountBalance): SnapshotBalanceDraft => ({
+  ...balance,
+  balanceInput: String(balance.balance),
+});
+
+const parseSnapshotDraft = (
+  draft: SnapshotDraft,
+): PersistedSnapshotDraft | null => {
+  const accountBalances: AccountBalance[] = [];
+
+  for (const balance of draft.accountBalances) {
+    const result = parseMoneyInput(balance.balanceInput);
+    if (!result.success) {
+      return null;
+    }
+
+    accountBalances.push({
+      account_id: balance.account_id,
+      balance: result.value,
+    });
+  }
+
+  return {
+    ...draft,
+    accountBalances,
+  };
+};
 
 const formatBalanceChange = (
   change: SnapshotRow["balanceChange"],

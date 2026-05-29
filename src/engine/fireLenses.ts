@@ -3,6 +3,7 @@ import {
   projectBalances,
   type ProjectionRow,
 } from "./projection";
+import { resolveRetirementAge } from "./ownerAssumptions";
 import { deriveSnapshotNow, type EngineWarning } from "./snapshots";
 
 export type FireTargetResult = {
@@ -59,13 +60,6 @@ export const calculateFullFireDate = ({
   );
 
   return reachedRow ? toFireDate(reachedRow) : null;
-};
-
-export const resolveRetirementAge = (envelope: FireEnvelope): number => {
-  if (envelope.owners && envelope.owners.length > 0) {
-    return Math.max(...envelope.owners.map((o) => o.retirement_age));
-  }
-  return envelope.profile.retirement_age;
 };
 
 export const calculateCoastFireDate = (

@@ -256,6 +256,7 @@ describe("owners", () => {
     name: "Alex",
     birth_year: 1988,
     retirement_age: 55,
+    projection_end_age: 90,
     ...overrides,
   });
 
@@ -321,6 +322,24 @@ describe("owners", () => {
     if (!result.success) {
       expect(formatValidationErrors(result.error)).toContainEqual(
         expect.objectContaining({ path: "owners.0.retirement_age" }),
+      );
+    }
+  });
+
+  it("rejects owner projection end age before owner retirement age", () => {
+    const envelope = validEnvelope();
+    envelope.owners = [owner({ retirement_age: 60, projection_end_age: 55 })];
+
+    const result = validateFireEnvelope(envelope);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(formatValidationErrors(result.error)).toContainEqual(
+        expect.objectContaining({
+          path: "owners.0.projection_end_age",
+          message:
+            "Owner projection end age must be greater than or equal to owner retirement age",
+        }),
       );
     }
   });

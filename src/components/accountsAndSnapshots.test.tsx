@@ -63,6 +63,26 @@ describe("SnapshotsSection", () => {
     expect(container?.textContent).not.toContain("old:tfsa,cash");
   });
 
+  it("allows clearing a snapshot balance before entering a replacement value", async () => {
+    render(
+      <HouseholdProvider initialEnvelope={envelope()}>
+        <SnapshotsSection />
+        <SnapshotBalanceProbe snapshotId="s1" accountId="tfsa" />
+      </HouseholdProvider>,
+    );
+
+    await click(button("Edit"));
+    const balanceInput = textbox("TFSA snapshot balance");
+
+    await change(balanceInput, "");
+    expect(balanceInput.value).toBe("");
+
+    await change(balanceInput, "20000");
+    await click(button("Save snapshot"));
+
+    expect(container?.textContent).toContain("s1:tfsa:20000");
+  });
+
   it("renders latest per-account and blended projected-asset change details", () => {
     render(
       <HouseholdProvider initialEnvelope={balanceChangeEnvelope()}>
@@ -402,6 +422,26 @@ function SnapshotBalancesProbe({ snapshotId }: { snapshotId: string }) {
     "missing";
 
   return <output>{`${snapshotId}:${accountIds}`}</output>;
+}
+
+function SnapshotBalanceProbe({
+  snapshotId,
+  accountId,
+}: {
+  snapshotId: string;
+  accountId: string;
+}) {
+  const state = useHouseholdState();
+  const snapshot = state.current.snapshots.find((item) => item.id === snapshotId);
+  const balance = snapshot?.account_balances.find(
+    (item) => item.account_id === accountId,
+  );
+
+  return (
+    <output>
+      {balance ? `${snapshotId}:${accountId}:${balance.balance}` : "missing"}
+    </output>
+  );
 }
 
 const account = (overrides: Partial<Account> & Pick<Account, "id">): Account => ({

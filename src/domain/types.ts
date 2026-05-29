@@ -26,6 +26,7 @@ export type Owner = {
   name: string;
   birth_year: number;
   retirement_age: number;
+  projection_end_age?: number;
 };
 
 export type Account = {

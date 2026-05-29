@@ -52,6 +52,7 @@ export const ownerSchema = z
     name: nonBlankStringSchema,
     birth_year: z.number().int().min(1900).max(2100),
     retirement_age: z.number().int().min(1).max(120),
+    projection_end_age: z.number().int().min(1).max(120).optional(),
   })
   .strict();
 
@@ -109,9 +110,7 @@ export const fireEnvelopeSchema = z
   })
   .strict()
   .superRefine((envelope, ctx) => {
-    if (
-      envelope.assumptions.projection_end_age < envelope.profile.retirement_age
-    ) {
+    if (envelope.assumptions.projection_end_age < envelope.profile.retirement_age) {
       ctx.addIssue({
         code: "custom",
         message: "Projection end age must be greater than or equal to retirement age",
@@ -129,6 +128,20 @@ export const fireEnvelopeSchema = z
       });
 
       const ownerIds = new Set(envelope.owners.map((o) => o.id));
+      envelope.owners.forEach((owner, ownerIndex) => {
+        if (
+          owner.projection_end_age !== undefined &&
+          owner.projection_end_age < owner.retirement_age
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message:
+              "Owner projection end age must be greater than or equal to owner retirement age",
+            path: ["owners", ownerIndex, "projection_end_age"],
+          });
+        }
+      });
+
       envelope.accounts.forEach((account, accountIndex) => {
         if (account.owner_id !== undefined && !ownerIds.has(account.owner_id)) {
           ctx.addIssue({

@@ -13,7 +13,8 @@
       "id": "sample-owner-primary",
       "name": "Primary",
       "birth_year": 1988,
-      "retirement_age": 60
+      "retirement_age": 60,
+      "projection_end_age": 90
     }
   ],
   "accounts": [

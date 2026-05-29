@@ -27,7 +27,7 @@ export function AssumptionsSection({
   onContributionModeChange: (mode: ContributionMode) => void;
 }) {
   const { state, dispatch } = useHouseholdStore();
-  const { profile, assumptions } = state.current;
+  const { assumptions } = state.current;
   const owners = state.current.owners ?? [];
 
   const updateWithdrawalMode = (kind: WithdrawalInput["kind"]) => {
@@ -98,8 +98,10 @@ export function AssumptionsSection({
             owner: {
               id: `owner-${Date.now().toString(36)}`,
               name: "New owner",
-              birth_year: profile.birth_year,
-              retirement_age: profile.retirement_age,
+              birth_year: owners[0]?.birth_year ?? state.current.profile.birth_year,
+              retirement_age:
+                owners[0]?.retirement_age ?? state.current.profile.retirement_age,
+              projection_end_age: assumptions.projection_end_age,
             },
           })
         }
@@ -107,56 +109,10 @@ export function AssumptionsSection({
           dispatch({ type: "owner_updated", ownerId, patch })
         }
         onRemove={(ownerId) => dispatch({ type: "owner_removed", ownerId })}
+        defaultProjectionEndAge={assumptions.projection_end_age}
       />
 
       <div className="assumptions-strip">
-        <InlineField label="Birth year">
-          <InlineEditable
-            label="birth year"
-            value={String(profile.birth_year)}
-            displayValue={String(profile.birth_year)}
-            inputMode="numeric"
-            parse={(value) => parseIntegerInput(value, { min: 1900, max: 2100 })}
-            onCommit={(birthYear) =>
-              dispatch({ type: "profile_updated", patch: { birth_year: birthYear } })
-            }
-          />
-        </InlineField>
-
-        <InlineField label="Retire age">
-          <InlineEditable
-            label="retirement age"
-            value={String(profile.retirement_age)}
-            displayValue={String(profile.retirement_age)}
-            inputMode="numeric"
-            parse={(value) =>
-              parseRetirementAge(value, assumptions.projection_end_age)
-            }
-            onCommit={(retirementAge) =>
-              dispatch({
-                type: "profile_updated",
-                patch: { retirement_age: retirementAge },
-              })
-            }
-          />
-        </InlineField>
-
-        <InlineField label="End age">
-          <InlineEditable
-            label="projection end age"
-            value={String(assumptions.projection_end_age)}
-            displayValue={String(assumptions.projection_end_age)}
-            inputMode="numeric"
-            parse={(value) => parseProjectionEndAge(value, profile.retirement_age)}
-            onCommit={(projectionEndAge) =>
-              dispatch({
-                type: "assumptions_updated",
-                patch: { projection_end_age: projectionEndAge },
-              })
-            }
-          />
-        </InlineField>
-
         <InlineField label="Annual expenses">
           <InlineEditable
             label="annual expenses"
@@ -315,59 +271,81 @@ function OwnersPanel({
   onAdd,
   onUpdate,
   onRemove,
+  defaultProjectionEndAge,
 }: {
   owners: Owner[];
   onAdd: () => void;
   onUpdate: (ownerId: string, patch: Partial<Owner>) => void;
   onRemove: (ownerId: string) => void;
+  defaultProjectionEndAge: number;
 }) {
   return (
     <div className="owners-panel">
-      {owners.map((owner) => (
-        <div key={owner.id} className="owner-card">
-          <div className="owner-card-fields">
-            <div className="owner-field">
-              <span className="assumption-label">Name</span>
-              <OwnerNameField
-                name={owner.name}
-                onCommit={(name) => onUpdate(owner.id, { name })}
-              />
+      {owners.map((owner) => {
+        const projectionEndAge =
+          owner.projection_end_age ?? defaultProjectionEndAge;
+
+        return (
+          <div key={owner.id} className="owner-card">
+            <div className="owner-card-fields">
+              <div className="owner-field">
+                <span className="assumption-label">Name</span>
+                <OwnerNameField
+                  name={owner.name}
+                  onCommit={(name) => onUpdate(owner.id, { name })}
+                />
+              </div>
+              <div className="owner-field">
+                <span className="assumption-label">Birth year</span>
+                <InlineEditable
+                  label={`${owner.name} birth year`}
+                  value={String(owner.birth_year)}
+                  displayValue={String(owner.birth_year)}
+                  inputMode="numeric"
+                  parse={(v) => parseIntegerInput(v, { min: 1900, max: 2100 })}
+                  onCommit={(birth_year) => onUpdate(owner.id, { birth_year })}
+                />
+              </div>
+              <div className="owner-field">
+                <span className="assumption-label">Retire age</span>
+                <InlineEditable
+                  label={`${owner.name} retirement age`}
+                  value={String(owner.retirement_age)}
+                  displayValue={String(owner.retirement_age)}
+                  inputMode="numeric"
+                  parse={(v) => parseRetirementAge(v, projectionEndAge)}
+                  onCommit={(retirement_age) =>
+                    onUpdate(owner.id, { retirement_age })
+                  }
+                />
+              </div>
+              <div className="owner-field">
+                <span className="assumption-label">End age</span>
+                <InlineEditable
+                  label={`${owner.name} projection end age`}
+                  value={String(projectionEndAge)}
+                  displayValue={String(projectionEndAge)}
+                  inputMode="numeric"
+                  parse={(v) => parseProjectionEndAge(v, owner.retirement_age)}
+                  onCommit={(projection_end_age) =>
+                    onUpdate(owner.id, { projection_end_age })
+                  }
+                />
+              </div>
             </div>
-            <div className="owner-field">
-              <span className="assumption-label">Birth year</span>
-              <InlineEditable
-                label={`${owner.name} birth year`}
-                value={String(owner.birth_year)}
-                displayValue={String(owner.birth_year)}
-                inputMode="numeric"
-                parse={(v) => parseIntegerInput(v, { min: 1900, max: 2100 })}
-                onCommit={(birth_year) => onUpdate(owner.id, { birth_year })}
-              />
-            </div>
-            <div className="owner-field">
-              <span className="assumption-label">Retire age</span>
-              <InlineEditable
-                label={`${owner.name} retirement age`}
-                value={String(owner.retirement_age)}
-                displayValue={String(owner.retirement_age)}
-                inputMode="numeric"
-                parse={(v) => parseIntegerInput(v, { min: 1, max: 120 })}
-                onCommit={(retirement_age) => onUpdate(owner.id, { retirement_age })}
-              />
-            </div>
+            {owners.length > 1 ? (
+              <button
+                type="button"
+                className="owner-remove-btn"
+                aria-label={`Remove owner ${owner.id}`}
+                onClick={() => onRemove(owner.id)}
+              >
+                ×
+              </button>
+            ) : null}
           </div>
-          {owners.length > 1 ? (
-            <button
-              type="button"
-              className="owner-remove-btn"
-              aria-label={`Remove owner ${owner.id}`}
-              onClick={() => onRemove(owner.id)}
-            >
-              ×
-            </button>
-          ) : null}
-        </div>
-      ))}
+        );
+      })}
       <button
         type="button"
         className="button"

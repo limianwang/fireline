@@ -11,7 +11,13 @@ export const createFreshHousehold = (): FireEnvelope => ({
     default_currency: "CAD",
   },
   owners: [
-    { id: "owner-primary", name: "Primary", birth_year: 1990, retirement_age: 65 },
+    {
+      id: "owner-primary",
+      name: "Primary",
+      birth_year: 1990,
+      retirement_age: 65,
+      projection_end_age: 90,
+    },
   ],
   accounts: [],
   snapshots: [],

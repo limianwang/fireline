@@ -276,21 +276,51 @@ describe("HeaderStrip", () => {
 });
 
 describe("AssumptionsSection — owner management", () => {
-  it("renders each owner's name, birth year, and retirement age", () => {
+  it("renders each owner's name, birth year, retirement age, and end age", () => {
     renderAssumptions({
       ...createFreshHousehold(),
       owners: [
-        { id: "o1", name: "Alex", birth_year: 1988, retirement_age: 55 },
-        { id: "o2", name: "Spouse", birth_year: 1990, retirement_age: 58 },
+        {
+          id: "o1",
+          name: "Alex",
+          birth_year: 1988,
+          retirement_age: 55,
+          projection_end_age: 90,
+        },
+        {
+          id: "o2",
+          name: "Spouse",
+          birth_year: 1990,
+          retirement_age: 58,
+          projection_end_age: 92,
+        },
       ],
     });
 
     expect(container?.textContent).toContain("Alex");
+    expect(container?.textContent).toContain("Birth year");
+    expect(container?.textContent).toContain("Retire age");
+    expect(container?.textContent).toContain("End age");
     expect(container?.textContent).toContain("1988");
     expect(container?.textContent).toContain("55");
+    expect(container?.textContent).toContain("90");
     expect(container?.textContent).toContain("Spouse");
     expect(container?.textContent).toContain("1990");
     expect(container?.textContent).toContain("58");
+    expect(container?.textContent).toContain("92");
+  });
+
+  it("does not render birth, retire, or end age in the global assumptions strip", () => {
+    renderAssumptions(createFreshHousehold());
+
+    const globalLabels = Array.from(
+      container?.querySelectorAll(".assumptions-strip .assumption-label") ?? [],
+    ).map((label) => label.textContent);
+
+    expect(globalLabels).not.toContain("Birth year");
+    expect(globalLabels).not.toContain("Retire age");
+    expect(globalLabels).not.toContain("End age");
+    expect(globalLabels).toContain("Annual expenses");
   });
 
   it("adds a second owner when Add owner is clicked", async () => {
