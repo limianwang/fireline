@@ -6,9 +6,9 @@ import {
   calculateFirePercent,
   calculateFireTarget,
   calculateFullFireDate,
-  resolveRetirementAge,
   type FireDate,
 } from "./fireLenses";
+import { resolveRetirementAge, resolveRetirementYear } from "./ownerAssumptions";
 import { projectBalances, type ProjectionRow } from "./projection";
 import {
   deriveSnapshotNow,
@@ -142,7 +142,7 @@ export const buildProjectionDisplayModel = (
     toProjectionMarker("barista_fire", "Barista", baristaFire),
     toProjectionMarker("full_fire", "Full FIRE", fullFire),
     toProjectionMarker("retirement", "Retirement", {
-      year: envelope.profile.birth_year + resolveRetirementAge(envelope),
+      year: resolveRetirementYear(envelope),
       age: resolveRetirementAge(envelope),
     }),
   ].filter((marker): marker is ProjectionMarker => marker !== null);

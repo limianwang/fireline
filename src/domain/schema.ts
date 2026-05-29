@@ -9,7 +9,6 @@ export type {
   HouseholdProfile,
   Owner,
   Snapshot,
-  WithdrawalInput,
 } from "./types";
 
 const isoDateTimeSchema = z.iso.datetime({ offset: true });
@@ -22,21 +21,6 @@ const nonBlankStringSchema = z
     message: "Required string cannot be blank",
   });
 const optionalNonBlankStringSchema = nonBlankStringSchema.optional();
-
-export const withdrawalInputSchema = z.discriminatedUnion("kind", [
-  z
-    .object({
-      kind: z.literal("rate"),
-      value: finiteNumberSchema.gt(0).max(1),
-    })
-    .strict(),
-  z
-    .object({
-      kind: z.literal("fixed_annual_withdrawal"),
-      value: finiteNumberSchema.gt(0),
-    })
-    .strict(),
-]);
 
 export const profileSchema = z
   .object({
@@ -52,6 +36,7 @@ export const ownerSchema = z
     name: nonBlankStringSchema,
     birth_year: z.number().int().min(1900).max(2100),
     retirement_age: z.number().int().min(1).max(120),
+    projection_end_age: z.number().int().min(1).max(120).optional(),
   })
   .strict();
 
@@ -88,7 +73,7 @@ export const snapshotSchema = z
 export const assumptionsSchema = z
   .object({
     annual_expenses: nonNegativeFiniteNumberSchema,
-    withdrawal_input: withdrawalInputSchema,
+    withdrawal_rate: finiteNumberSchema.gt(0).max(1),
     inflation_rate: finiteNumberSchema.min(-0.99).max(1),
     barista_combined_income: nonNegativeFiniteNumberSchema,
     projection_end_age: z.number().int().min(1).max(120),
@@ -109,9 +94,7 @@ export const fireEnvelopeSchema = z
   })
   .strict()
   .superRefine((envelope, ctx) => {
-    if (
-      envelope.assumptions.projection_end_age < envelope.profile.retirement_age
-    ) {
+    if (envelope.assumptions.projection_end_age < envelope.profile.retirement_age) {
       ctx.addIssue({
         code: "custom",
         message: "Projection end age must be greater than or equal to retirement age",
@@ -129,6 +112,20 @@ export const fireEnvelopeSchema = z
       });
 
       const ownerIds = new Set(envelope.owners.map((o) => o.id));
+      envelope.owners.forEach((owner, ownerIndex) => {
+        if (
+          owner.projection_end_age !== undefined &&
+          owner.projection_end_age < owner.retirement_age
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message:
+              "Owner projection end age must be greater than or equal to owner retirement age",
+            path: ["owners", ownerIndex, "projection_end_age"],
+          });
+        }
+      });
+
       envelope.accounts.forEach((account, accountIndex) => {
         if (account.owner_id !== undefined && !ownerIds.has(account.owner_id)) {
           ctx.addIssue({

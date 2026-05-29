@@ -1,4 +1,5 @@
 import type { FireEnvelope, Snapshot } from "../domain/types";
+import { resolvePlanningBirthYear } from "./ownerAssumptions";
 
 export type EngineWarning =
   | {
@@ -75,7 +76,7 @@ export const deriveSnapshotNow = (envelope: FireEnvelope): SnapshotNow => {
   return {
     ...snapshots,
     currentYear,
-    currentAge: currentYear - envelope.profile.birth_year,
+    currentAge: currentYear - resolvePlanningBirthYear(envelope),
     warnings: [],
   };
 };

@@ -39,7 +39,7 @@ const validEnvelope = (): FireEnvelope => ({
   ],
   assumptions: {
     annual_expenses: 72000,
-    withdrawal_input: { kind: "rate", value: 0.04 },
+    withdrawal_rate: 0.04,
     inflation_rate: 0.025,
     barista_combined_income: 25000,
     projection_end_age: 90,
@@ -168,17 +168,14 @@ describe("FIRE envelope schema", () => {
 
   it("rejects invalid withdrawal inputs", () => {
     const envelope = validEnvelope();
-    envelope.assumptions.withdrawal_input = {
-      kind: "rate",
-      value: 0,
-    };
+    envelope.assumptions.withdrawal_rate = 0;
 
     const result = validateFireEnvelope(envelope);
 
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(formatValidationErrors(result.error)).toContainEqual(
-        expect.objectContaining({ path: "assumptions.withdrawal_input.value" }),
+        expect.objectContaining({ path: "assumptions.withdrawal_rate" }),
       );
     }
   });
@@ -256,6 +253,7 @@ describe("owners", () => {
     name: "Alex",
     birth_year: 1988,
     retirement_age: 55,
+    projection_end_age: 90,
     ...overrides,
   });
 
@@ -321,6 +319,24 @@ describe("owners", () => {
     if (!result.success) {
       expect(formatValidationErrors(result.error)).toContainEqual(
         expect.objectContaining({ path: "owners.0.retirement_age" }),
+      );
+    }
+  });
+
+  it("rejects owner projection end age before owner retirement age", () => {
+    const envelope = validEnvelope();
+    envelope.owners = [owner({ retirement_age: 60, projection_end_age: 55 })];
+
+    const result = validateFireEnvelope(envelope);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(formatValidationErrors(result.error)).toContainEqual(
+        expect.objectContaining({
+          path: "owners.0.projection_end_age",
+          message:
+            "Owner projection end age must be greater than or equal to owner retirement age",
+        }),
       );
     }
   });

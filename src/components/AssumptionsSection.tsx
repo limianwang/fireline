@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 
-import type { Owner, WithdrawalInput } from "../domain";
+import type { Owner } from "../domain";
 import { useHouseholdStore } from "../state";
 import { InlineEditable } from "./InlineEditable";
 import {
@@ -27,40 +27,13 @@ export function AssumptionsSection({
   onContributionModeChange: (mode: ContributionMode) => void;
 }) {
   const { state, dispatch } = useHouseholdStore();
-  const { profile, assumptions } = state.current;
+  const { assumptions } = state.current;
   const owners = state.current.owners ?? [];
 
-  const updateWithdrawalMode = (kind: WithdrawalInput["kind"]) => {
-    if (assumptions.withdrawal_input.kind === kind) {
-      return;
-    }
-
+  const updateWithdrawalRate = (value: number) => {
     dispatch({
       type: "assumptions_updated",
-      patch: {
-        withdrawal_input:
-          kind === "rate"
-            ? { kind, value: 0.04 }
-            : {
-                kind,
-                value:
-                  assumptions.annual_expenses > 0
-                    ? assumptions.annual_expenses
-                    : 100000,
-              },
-      },
-    });
-  };
-
-  const updateWithdrawalValue = (value: number) => {
-    dispatch({
-      type: "assumptions_updated",
-      patch: {
-        withdrawal_input: {
-          ...assumptions.withdrawal_input,
-          value,
-        },
-      },
+      patch: { withdrawal_rate: value },
     });
   };
 
@@ -98,8 +71,10 @@ export function AssumptionsSection({
             owner: {
               id: `owner-${Date.now().toString(36)}`,
               name: "New owner",
-              birth_year: profile.birth_year,
-              retirement_age: profile.retirement_age,
+              birth_year: owners[0]?.birth_year ?? state.current.profile.birth_year,
+              retirement_age:
+                owners[0]?.retirement_age ?? state.current.profile.retirement_age,
+              projection_end_age: assumptions.projection_end_age,
             },
           })
         }
@@ -107,56 +82,10 @@ export function AssumptionsSection({
           dispatch({ type: "owner_updated", ownerId, patch })
         }
         onRemove={(ownerId) => dispatch({ type: "owner_removed", ownerId })}
+        defaultProjectionEndAge={assumptions.projection_end_age}
       />
 
       <div className="assumptions-strip">
-        <InlineField label="Birth year">
-          <InlineEditable
-            label="birth year"
-            value={String(profile.birth_year)}
-            displayValue={String(profile.birth_year)}
-            inputMode="numeric"
-            parse={(value) => parseIntegerInput(value, { min: 1900, max: 2100 })}
-            onCommit={(birthYear) =>
-              dispatch({ type: "profile_updated", patch: { birth_year: birthYear } })
-            }
-          />
-        </InlineField>
-
-        <InlineField label="Retire age">
-          <InlineEditable
-            label="retirement age"
-            value={String(profile.retirement_age)}
-            displayValue={String(profile.retirement_age)}
-            inputMode="numeric"
-            parse={(value) =>
-              parseRetirementAge(value, assumptions.projection_end_age)
-            }
-            onCommit={(retirementAge) =>
-              dispatch({
-                type: "profile_updated",
-                patch: { retirement_age: retirementAge },
-              })
-            }
-          />
-        </InlineField>
-
-        <InlineField label="End age">
-          <InlineEditable
-            label="projection end age"
-            value={String(assumptions.projection_end_age)}
-            displayValue={String(assumptions.projection_end_age)}
-            inputMode="numeric"
-            parse={(value) => parseProjectionEndAge(value, profile.retirement_age)}
-            onCommit={(projectionEndAge) =>
-              dispatch({
-                type: "assumptions_updated",
-                patch: { projection_end_age: projectionEndAge },
-              })
-            }
-          />
-        </InlineField>
-
         <InlineField label="Annual expenses">
           <InlineEditable
             label="annual expenses"
@@ -175,42 +104,16 @@ export function AssumptionsSection({
 
         <InlineField label="Withdrawal">
           <div className="withdrawal-editor">
-            <div className="withdrawal-mode-control" aria-label="Withdrawal mode">
-              <button
-                type="button"
-                aria-pressed={assumptions.withdrawal_input.kind === "rate"}
-                onClick={() => updateWithdrawalMode("rate")}
-              >
-                Rate
-              </button>
-              <button
-                type="button"
-                aria-pressed={
-                  assumptions.withdrawal_input.kind === "fixed_annual_withdrawal"
-                }
-                onClick={() => updateWithdrawalMode("fixed_annual_withdrawal")}
-              >
-                Fixed
-              </button>
-            </div>
             <div className="withdrawal-value-row">
               <InlineEditable
-                label="withdrawal value"
-                value={withdrawalInputValue(assumptions.withdrawal_input)}
-                displayValue={formatWithdrawalInput(assumptions.withdrawal_input)}
+                label="withdrawal rate"
+                value={formatPercent(assumptions.withdrawal_rate)}
+                displayValue={formatPercent(assumptions.withdrawal_rate)}
                 inputMode="decimal"
-                parse={(value) =>
-                  assumptions.withdrawal_input.kind === "rate"
-                    ? parsePositivePercent(value)
-                    : parsePositiveMoney(value)
-                }
-                onCommit={updateWithdrawalValue}
+                parse={parsePositivePercent}
+                onCommit={updateWithdrawalRate}
               />
-              <span className="withdrawal-unit">
-                {assumptions.withdrawal_input.kind === "rate"
-                  ? "of annual expenses"
-                  : "per year"}
-              </span>
+              <span className="withdrawal-unit">of annual expenses</span>
             </div>
           </div>
         </InlineField>
@@ -315,59 +218,81 @@ function OwnersPanel({
   onAdd,
   onUpdate,
   onRemove,
+  defaultProjectionEndAge,
 }: {
   owners: Owner[];
   onAdd: () => void;
   onUpdate: (ownerId: string, patch: Partial<Owner>) => void;
   onRemove: (ownerId: string) => void;
+  defaultProjectionEndAge: number;
 }) {
   return (
     <div className="owners-panel">
-      {owners.map((owner) => (
-        <div key={owner.id} className="owner-card">
-          <div className="owner-card-fields">
-            <div className="owner-field">
-              <span className="assumption-label">Name</span>
-              <OwnerNameField
-                name={owner.name}
-                onCommit={(name) => onUpdate(owner.id, { name })}
-              />
+      {owners.map((owner) => {
+        const projectionEndAge =
+          owner.projection_end_age ?? defaultProjectionEndAge;
+
+        return (
+          <div key={owner.id} className="owner-card">
+            <div className="owner-card-fields">
+              <div className="owner-field">
+                <span className="assumption-label">Name</span>
+                <OwnerNameField
+                  name={owner.name}
+                  onCommit={(name) => onUpdate(owner.id, { name })}
+                />
+              </div>
+              <div className="owner-field">
+                <span className="assumption-label">Birth year</span>
+                <InlineEditable
+                  label={`${owner.name} birth year`}
+                  value={String(owner.birth_year)}
+                  displayValue={String(owner.birth_year)}
+                  inputMode="numeric"
+                  parse={(v) => parseIntegerInput(v, { min: 1900, max: 2100 })}
+                  onCommit={(birth_year) => onUpdate(owner.id, { birth_year })}
+                />
+              </div>
+              <div className="owner-field">
+                <span className="assumption-label">Retire age</span>
+                <InlineEditable
+                  label={`${owner.name} retirement age`}
+                  value={String(owner.retirement_age)}
+                  displayValue={String(owner.retirement_age)}
+                  inputMode="numeric"
+                  parse={(v) => parseRetirementAge(v, projectionEndAge)}
+                  onCommit={(retirement_age) =>
+                    onUpdate(owner.id, { retirement_age })
+                  }
+                />
+              </div>
+              <div className="owner-field">
+                <span className="assumption-label">End age</span>
+                <InlineEditable
+                  label={`${owner.name} projection end age`}
+                  value={String(projectionEndAge)}
+                  displayValue={String(projectionEndAge)}
+                  inputMode="numeric"
+                  parse={(v) => parseProjectionEndAge(v, owner.retirement_age)}
+                  onCommit={(projection_end_age) =>
+                    onUpdate(owner.id, { projection_end_age })
+                  }
+                />
+              </div>
             </div>
-            <div className="owner-field">
-              <span className="assumption-label">Birth year</span>
-              <InlineEditable
-                label={`${owner.name} birth year`}
-                value={String(owner.birth_year)}
-                displayValue={String(owner.birth_year)}
-                inputMode="numeric"
-                parse={(v) => parseIntegerInput(v, { min: 1900, max: 2100 })}
-                onCommit={(birth_year) => onUpdate(owner.id, { birth_year })}
-              />
-            </div>
-            <div className="owner-field">
-              <span className="assumption-label">Retire age</span>
-              <InlineEditable
-                label={`${owner.name} retirement age`}
-                value={String(owner.retirement_age)}
-                displayValue={String(owner.retirement_age)}
-                inputMode="numeric"
-                parse={(v) => parseIntegerInput(v, { min: 1, max: 120 })}
-                onCommit={(retirement_age) => onUpdate(owner.id, { retirement_age })}
-              />
-            </div>
+            {owners.length > 1 ? (
+              <button
+                type="button"
+                className="owner-remove-btn"
+                aria-label={`Remove owner ${owner.id}`}
+                onClick={() => onRemove(owner.id)}
+              >
+                ×
+              </button>
+            ) : null}
           </div>
-          {owners.length > 1 ? (
-            <button
-              type="button"
-              className="owner-remove-btn"
-              aria-label={`Remove owner ${owner.id}`}
-              onClick={() => onRemove(owner.id)}
-            >
-              ×
-            </button>
-          ) : null}
-        </div>
-      ))}
+        );
+      })}
       <button
         type="button"
         className="button"
@@ -476,29 +401,3 @@ const parseInflationRate = (value: string): FieldParseResult => {
 
   return result;
 };
-
-const parsePositiveMoney = (value: string): FieldParseResult => {
-  const result = parseMoneyInput(value);
-  if (!result.success) {
-    return result;
-  }
-
-  if (result.value <= 0) {
-    return {
-      success: false,
-      message: "Enter a dollar amount greater than 0.",
-    };
-  }
-
-  return result;
-};
-
-const withdrawalInputValue = (withdrawalInput: WithdrawalInput): string =>
-  withdrawalInput.kind === "rate"
-    ? formatPercent(withdrawalInput.value)
-    : String(withdrawalInput.value);
-
-const formatWithdrawalInput = (withdrawalInput: WithdrawalInput): string =>
-  withdrawalInput.kind === "rate"
-    ? formatPercent(withdrawalInput.value)
-    : formatMoney(withdrawalInput.value);

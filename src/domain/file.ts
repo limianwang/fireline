@@ -33,10 +33,29 @@ export const parseFireJson = (json: string): FireValidationResult => {
 const migrateEnvelope = (raw: unknown): unknown => {
   if (typeof raw !== "object" || raw === null) return raw;
   const obj = raw as Record<string, unknown>;
-  if (obj["owners"] !== undefined) return obj;
   const profile = obj["profile"];
   if (typeof profile !== "object" || profile === null) return obj;
   const p = profile as Record<string, unknown>;
+  const assumptions = obj["assumptions"];
+  const projectionEndAge =
+    typeof assumptions === "object" && assumptions !== null
+      ? (assumptions as Record<string, unknown>)["projection_end_age"]
+      : undefined;
+
+  if (Array.isArray(obj["owners"])) {
+    return {
+      ...obj,
+      owners: obj["owners"].map((owner) =>
+        typeof owner === "object" && owner !== null
+          ? {
+              projection_end_age: projectionEndAge,
+              ...owner,
+            }
+          : owner,
+      ),
+    };
+  }
+
   return {
     ...obj,
     owners: [
@@ -45,6 +64,7 @@ const migrateEnvelope = (raw: unknown): unknown => {
         name: "Primary",
         birth_year: p["birth_year"],
         retirement_age: p["retirement_age"],
+        projection_end_age: projectionEndAge,
       },
     ],
   };

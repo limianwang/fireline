@@ -1,4 +1,9 @@
 import type { Account, FireEnvelope, Snapshot } from "../domain/types";
+import {
+  resolvePlanningBirthYear,
+  resolveProjectionEndYear,
+  resolveRetirementYear,
+} from "./ownerAssumptions";
 import { deriveSnapshotNow, type EngineWarning } from "./snapshots";
 
 export type ProjectionOptions = {
@@ -44,12 +49,13 @@ export const projectBalances = (
     snapshotNow.latestSnapshot,
   );
   const startYear = snapshotNow.currentYear;
-  const endYear =
-    envelope.profile.birth_year + envelope.assumptions.projection_end_age;
+  const planningBirthYear = resolvePlanningBirthYear(envelope);
+  const retirementYear = resolveRetirementYear(envelope);
+  const endYear = resolveProjectionEndYear(envelope);
   const rows: ProjectionRow[] = [
     toProjectionRow({
       year: startYear,
-      birthYear: envelope.profile.birth_year,
+      birthYear: planningBirthYear,
       balances: latestBalances,
     }),
   ];
@@ -63,17 +69,17 @@ export const projectBalances = (
   }
 
   for (let year = startYear + 1; year <= endYear; year += 1) {
-    const age = year - envelope.profile.birth_year;
+    const age = year - planningBirthYear;
     const grownBalances = growAccounts({
       accounts: includedAccounts,
       balances: runningBalances,
       inflationRate: envelope.assumptions.inflation_rate,
     });
 
-    if (age >= envelope.profile.retirement_age) {
+    if (year >= retirementYear) {
       const row = drawDownAccounts({
         year,
-        birthYear: envelope.profile.birth_year,
+        birthYear: planningBirthYear,
         balances: grownBalances,
         annualExpenses: envelope.assumptions.annual_expenses,
       });
@@ -97,7 +103,7 @@ export const projectBalances = (
       rows.push(
         toProjectionRow({
           year,
-          birthYear: envelope.profile.birth_year,
+          birthYear: planningBirthYear,
           balances: runningBalances,
         }),
       );

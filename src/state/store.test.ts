@@ -44,11 +44,17 @@ const envelope = (): FireEnvelope => ({
     default_currency: "CAD",
   },
   owners: [
-    { id: "owner-1", name: "Alex", birth_year: 1990, retirement_age: 60 },
+    {
+      id: "owner-1",
+      name: "Alex",
+      birth_year: 1990,
+      retirement_age: 60,
+      projection_end_age: 90,
+    },
   ],
   assumptions: {
     annual_expenses: 40_000,
-    withdrawal_input: { kind: "rate", value: 0.04 },
+    withdrawal_rate: 0.04,
     inflation_rate: 0.02,
     barista_combined_income: 0,
     projection_end_age: 90,
@@ -74,7 +80,7 @@ const stripVolatileFileFields = (
   source: FireEnvelope,
 ): Omit<FireEnvelope, "revision" | "saved_at"> => {
   const { revision: _revision, saved_at: _savedAt, ...durable } = source;
-  return durable;
+  return JSON.parse(JSON.stringify(durable));
 };
 
 describe("household reducer", () => {

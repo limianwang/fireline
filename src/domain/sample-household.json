@@ -13,7 +13,8 @@
       "id": "sample-owner-primary",
       "name": "Primary",
       "birth_year": 1988,
-      "retirement_age": 60
+      "retirement_age": 60,
+      "projection_end_age": 90
     }
   ],
   "accounts": [
@@ -57,10 +58,7 @@
   ],
   "assumptions": {
     "annual_expenses": 72000,
-    "withdrawal_input": {
-      "kind": "rate",
-      "value": 0.04
-    },
+    "withdrawal_rate": 0.04,
     "inflation_rate": 0.025,
     "barista_combined_income": 25000,
     "projection_end_age": 90

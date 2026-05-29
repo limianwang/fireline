@@ -62,7 +62,7 @@ const goldenEnvelope = (): FireEnvelope => ({
   ],
   assumptions: {
     annual_expenses: 40,
-    withdrawal_input: { kind: "rate", value: 0.04 },
+    withdrawal_rate: 0.04,
     inflation_rate: 0,
     barista_combined_income: 0,
     projection_end_age: 43,
@@ -247,7 +247,7 @@ describe("engine view model", () => {
       ...goldenEnvelope(),
       assumptions: {
         annual_expenses: 0,
-        withdrawal_input: { kind: "rate", value: 0.04 },
+        withdrawal_rate: 0.04,
         inflation_rate: 0,
         barista_combined_income: 0,
         projection_end_age: 43,
@@ -265,20 +265,7 @@ describe("engine view model", () => {
         ...goldenEnvelope(),
         assumptions: {
           annual_expenses: 1,
-          withdrawal_input: { kind: "rate", value: Number.MIN_VALUE },
-          inflation_rate: 0,
-          barista_combined_income: 0,
-          projection_end_age: 43,
-        },
-      },
-      {
-        ...goldenEnvelope(),
-        assumptions: {
-          annual_expenses: 40,
-          withdrawal_input: {
-            kind: "fixed_annual_withdrawal",
-            value: Number.MAX_VALUE,
-          },
+          withdrawal_rate: Number.MIN_VALUE,
           inflation_rate: 0,
           barista_combined_income: 0,
           projection_end_age: 43,

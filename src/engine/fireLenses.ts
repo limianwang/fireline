@@ -3,6 +3,7 @@ import {
   projectBalances,
   type ProjectionRow,
 } from "./projection";
+import { resolveRetirementAge } from "./ownerAssumptions";
 import { deriveSnapshotNow, type EngineWarning } from "./snapshots";
 
 export type FireTargetResult = {
@@ -19,17 +20,10 @@ export type FireDate = {
 export const calculateFireTarget = (
   envelope: FireEnvelope,
 ): FireTargetResult => {
-  const withdrawalInput = envelope.assumptions.withdrawal_input;
-  if (withdrawalInput.kind === "fixed_annual_withdrawal") {
-    return toFireTargetResult({
-      rawTarget: withdrawalInput.value / 0.04,
-      effective_withdrawal_rate: 0.04,
-    });
-  }
-
   return toFireTargetResult({
-    rawTarget: envelope.assumptions.annual_expenses / withdrawalInput.value,
-    effective_withdrawal_rate: withdrawalInput.value,
+    rawTarget:
+      envelope.assumptions.annual_expenses / envelope.assumptions.withdrawal_rate,
+    effective_withdrawal_rate: envelope.assumptions.withdrawal_rate,
   });
 };
 
@@ -59,13 +53,6 @@ export const calculateFullFireDate = ({
   );
 
   return reachedRow ? toFireDate(reachedRow) : null;
-};
-
-export const resolveRetirementAge = (envelope: FireEnvelope): number => {
-  if (envelope.owners && envelope.owners.length > 0) {
-    return Math.max(...envelope.owners.map((o) => o.retirement_age));
-  }
-  return envelope.profile.retirement_age;
 };
 
 export const calculateCoastFireDate = (

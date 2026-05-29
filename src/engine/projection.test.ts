@@ -33,7 +33,7 @@ const envelope = (overrides: Partial<FireEnvelope>): FireEnvelope => ({
   ],
   assumptions: {
     annual_expenses: 0,
-    withdrawal_input: { kind: "rate", value: 0.04 },
+    withdrawal_rate: 0.04,
     inflation_rate: 0,
     barista_combined_income: 0,
     projection_end_age: 42,
