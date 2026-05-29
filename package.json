@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "lint": "tsc -b --pretty false",
     "build": "tsc -b && vite build",
     "test": "vitest run"
   },
