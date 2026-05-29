@@ -1,0 +1,10 @@
+node_modules
+dist
+.vite
+.env
+.env.local
+*.local
+*.tsbuildinfo
+
+# Local planning artifacts kept out of the public repository.
+docs/

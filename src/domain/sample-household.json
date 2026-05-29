@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "saved_at": "2026-05-27T14:30:22.000Z",
+  "revision": 1,
+  "household_name": "Sample Household",
+  "profile": {
+    "birth_year": 1988,
+    "retirement_age": 60,
+    "default_currency": "CAD"
+  },
+  "owners": [
+    {
+      "id": "sample-owner-primary",
+      "name": "Primary",
+      "birth_year": 1988,
+      "retirement_age": 60
+    }
+  ],
+  "accounts": [
+    {
+      "id": "sample-tfsa",
+      "name": "Sample TFSA",
+      "type": "tfsa",
+      "owner_id": "sample-owner-primary",
+      "expected_nominal_return": 0.07,
+      "annual_contribution": 7000,
+      "include_in_fire": true,
+      "archived": false
+    },
+    {
+      "id": "sample-cash",
+      "name": "Emergency Cash",
+      "type": "cash",
+      "expected_nominal_return": 0.02,
+      "annual_contribution": 0,
+      "include_in_fire": false,
+      "archived": false
+    }
+  ],
+  "snapshots": [
+    {
+      "id": "sample-snapshot-2026-05-27",
+      "date": "2026-05-27",
+      "label": "Initial sample",
+      "notes": "Small fixture for schema and file import tests.",
+      "account_balances": [
+        {
+          "account_id": "sample-tfsa",
+          "balance": 125000
+        },
+        {
+          "account_id": "sample-cash",
+          "balance": 20000
+        }
+      ]
+    }
+  ],
+  "assumptions": {
+    "annual_expenses": 72000,
+    "withdrawal_input": {
+      "kind": "rate",
+      "value": 0.04
+    },
+    "inflation_rate": 0.025,
+    "barista_combined_income": 25000,
+    "projection_end_age": 90
+  }
+}
